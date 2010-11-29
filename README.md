@@ -21,17 +21,14 @@ nothing, and an additional call per block of 20 tweets downloaded.
 The Quick Start
 ---------------
 
-# Create a database.
+	# Create a database.
+	$ python bmtu.py init insom
 
-$ python bmtu.py init insom
+	# Perform the initial import.
+	$ python bmtu.py fetch insom
 
-# Perform the initial import.
-
-$ python bmtu.py fetch insom
-
-# Add to an hourly cron.
-
-0 * * * * python bmtu.py fetch insom
+	# Add to an hourly cron.
+	0 * * * * python bmtu.py fetch insom
 
 License
 -------
