@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import rfc822
 import time
