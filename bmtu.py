@@ -42,6 +42,8 @@ def load_tweets(**kwargs):
     url = 'http://twitter.com/statuses/user_timeline.json?' + urlencode(args)
     url_ = urlopen(url)
     tweets = json.load(url_)
+    if type(tweets) == dict and tweets.has_key('error'):
+        raise Exception(tweets['error'])
     for twit in tweets:
         c.execute('INSERT INTO tweet (tweet_id, created, text, source) VALUES (?, ?, ?, ?)',
             (twit['id'],
