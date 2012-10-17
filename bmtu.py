@@ -39,7 +39,7 @@ def fetch():
 def load_tweets(**kwargs):
     args = dict(count=20, trim_user=1, screen_name=screen_name)
     args.update(**kwargs)
-    url = 'http://twitter.com/statuses/user_timeline.json?' + urlencode(args)
+    url = 'https://api.twitter.com/1/statuses/user_timeline.json?' + urlencode(args)
     url_ = urlopen(url)
     tweets = json.load(url_)
     if type(tweets) == dict and tweets.has_key('error'):
