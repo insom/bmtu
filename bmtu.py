@@ -4,54 +4,54 @@ import sys
 import rfc822
 import time
 import json
+import iso8601
 from sqlite3 import connect
 from urllib import urlopen, urlencode
 
 c = None
-screen_name = None
+uid = None
 
 def fetch():
     going_up = True
     while going_up:
         cu = c.cursor()
-        cu.execute('SELECT MAX(tweet_id) max_id FROM tweet')
+        cu.execute('SELECT MAX(post_id) max_id FROM post')
         results = cu.fetchone()
-        tweet_count = None
+        post_count = None
         if not results[0]:
-            print >>sys.stderr, 'No existing tweets found: requesting default timeline.'
-            tweet_count = load_tweets()
+            print >>sys.stderr, 'No existing posts found: requesting default timeline.'
+            post_count = load_posts()
         else:
-            print >>sys.stderr, 'Requesting tweets newer than %lu' % results[0]
-            tweet_count = load_tweets(since_id=results[0])
-        if not tweet_count:
+            print >>sys.stderr, 'Requesting posts newer than %lu' % results[0]
+            post_count = load_posts(since_id=results[0])
+        if not post_count:
             going_up = False
     going_down = True
     while going_down:
         cu = c.cursor()
-        cu.execute('SELECT MIN(tweet_id) min_id FROM tweet')
+        cu.execute('SELECT MIN(post_id) min_id FROM post')
         results = cu.fetchone()
-        print >>sys.stderr, 'Requesting tweets older than %lu' % results[0]
-        tweet_count = load_tweets(max_id=(results[0]-1))
-        # The -1 is lame, but max_id is "<=" not just "<"
-        if not tweet_count:
+        print >>sys.stderr, 'Requesting posts older than %lu' % results[0]
+        post_count = load_posts(before_id=(results[0]))
+        if not post_count:
             going_down = False
 
-def load_tweets(**kwargs):
-    args = dict(count=20, trim_user=1, screen_name=screen_name)
+def load_posts(**kwargs):
+    args = dict(count=200)
     args.update(**kwargs)
-    url = 'http://twitter.com/statuses/user_timeline.json?' + urlencode(args)
+    url = ('https://alpha-api.app.net/stream/0/users/%s/posts?' % uid) + urlencode(args)
     url_ = urlopen(url)
-    tweets = json.load(url_)
-    if type(tweets) == dict and tweets.has_key('error'):
-        raise Exception(tweets['error'])
-    for twit in tweets:
-        c.execute('INSERT INTO tweet (tweet_id, created, text, source) VALUES (?, ?, ?, ?)',
+    posts = json.load(url_)
+    if type(posts) == dict and posts['meta'].has_key('error_message'):
+        raise Exception(posts['meta']['error_message'])
+    for twit in posts['data']:
+        c.execute('INSERT INTO post (post_id, created, text, source) VALUES (?, ?, ?, ?)',
             (twit['id'],
-            time.mktime(rfc822.parsedate(twit['created_at'])),
+            iso8601.parse_date(twit['created_at']),
             twit['text'],
-            twit['source']))
+            twit['source']['name']))
     c.commit()
-    return len(tweets)
+    return len(posts['data'])
 
 def print_help(args):
     print >>sys.stderr, '''
@@ -62,32 +62,32 @@ Usage:
 Operations:
 
     * init: Create an initial <username>.db file.
-    * fetch: Fill in missing tweets for <username>.db
+    * fetch: Fill in missing posts for <username>.db
 ''' % args[0]
 
 def main(*args):
-    global c, screen_name
+    global c, uid
     if len(args) != 3:
         print_help(args)
     elif args[1] == 'init':
-        screen_name = args[2]
+        uid = args[2]
         try:
-            c = connect('%s.db' % screen_name)
-            c.execute('CREATE TABLE tweet (tweet_id INTEGER PRIMARY KEY NOT NULL, created INTEGER NOT NULL, text TEXT NOT NULL, source TEXT)')
+            c = connect('%s.db' % uid)
+            c.execute('CREATE TABLE post (post_id INTEGER PRIMARY KEY NOT NULL, created INTEGER NOT NULL, text TEXT NOT NULL, source TEXT)')
         except Exception, e:
             print >>sys.stderr, "Error: There was a problem creating your database: %s" % str(e)
             sys.exit(-1)
     elif args[1] == 'fetch':
-        screen_name = args[2]
+        uid = args[2]
         try:
-            c = connect('%s.db' % screen_name)
+            c = connect('%s.db' % uid)
         except Exception, e:
             print >>sys.stderr, "Error: There was a problem opening your database: %s" % str(e)
             sys.exit(-2)
         try:
             fetch()
         except Exception, e:
-            print >>sys.stderr, "Error: There was a problem retrieving %s's timeline: %s" % (screen_name, str(e))
+            print >>sys.stderr, "Error: There was a problem retrieving %s's timeline: %s" % (uid, str(e))
             print >>sys.stderr, "Error: This may be a temporary failure, wait a bit and try again."
             sys.exit(-3)
     else:

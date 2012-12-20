@@ -1,39 +1,37 @@
-Back My Twits Up
-================
+Back My Twits^WAppDotNet Up
+===========================
 
-bmtu.py is a very, very simple Twitter backup tool. Most tools that I found
-online either did a lot of things and pulled in many dependencies (Tweetnest),
-basically didn't handle errors at all (most shell and Python recipies), or
-weren't designed for running more than once.
+bmtu.py is a very, very simple App.net backup tool.
 
 bmtu.py only depends on Python and libraries that ship with Ubuntu's python
-package. It requires Python 2.6 or above, and SQLite3. It handles most errors
-by giving up, and uses transactions to handle errors without corruption.
+package, and an ISO date parsing library, iso8601. It requires Python 2.6 or
+above, and SQLite3. It handles most errors by giving up, and uses transactions
+to handle errors without corruption.
 
-On performing a fetch, it checks for tweets newer and older than what is stored
-in the database. It will only pull in 20 new tweets, so it should be run from a
+On performing a fetch, it checks for posts newer and older than what is stored
+in the database. It will only pull in 200 new posts, so it should be run from a
 cron. Way up there on the TODO list is performing pagination on importing new
-tweets.
+posts.
 
 Currently bmtu.py will use two unauthenticated API calls per hour doing
-nothing, and an additional call per block of 20 tweets downloaded.
+nothing, and an additional call per block of 200 posts downloaded.
 
 The Quick Start
 ---------------
 
 	# Create a database.
-	$ python bmtu.py init insom
+	$ python bmtu.py init 29637
 
 	# Perform the initial import.
-	$ python bmtu.py fetch insom
+	$ python bmtu.py fetch 29637
 
 	# Add to an hourly cron.
-	0 * * * * python bmtu.py fetch insom
+	0 * * * * python bmtu.py fetch 29637
 
 License
 -------
 
-Copyright (c) 2010, Aaron Brady
+Copyright (c) 2010-2012, Aaron Brady
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
